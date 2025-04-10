@@ -69,18 +69,30 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
 
   // Load foods from localStorage on initial load
   useEffect(() => {
-    const storedFoods = localStorage.getItem('calovate_foods');
-    if (storedFoods) {
-      setFoods(JSON.parse(storedFoods));
-    } else {
-      // Use sample foods for demo
+    try {
+      const storedFoods = localStorage.getItem('calovate_foods');
+      if (storedFoods) {
+        setFoods(JSON.parse(storedFoods));
+      } else {
+        // Use sample foods for demo
+        setFoods(sampleFoods);
+        // Store sample foods in localStorage
+        localStorage.setItem('calovate_foods', JSON.stringify(sampleFoods));
+      }
+    } catch (error) {
+      console.error("Error loading foods from localStorage:", error);
+      // Fallback to sample foods
       setFoods(sampleFoods);
     }
   }, []);
 
   // Save foods to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('calovate_foods', JSON.stringify(foods));
+    try {
+      localStorage.setItem('calovate_foods', JSON.stringify(foods));
+    } catch (error) {
+      console.error("Error saving foods to localStorage:", error);
+    }
   }, [foods]);
 
   const addFood = (food: Omit<FoodItem, "id" | "date">) => {
@@ -145,6 +157,7 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
 
   const clearFoods = () => {
     setFoods([]);
+    localStorage.removeItem('calovate_foods');
     toast({
       title: "Food log cleared",
       description: "All food entries have been cleared.",

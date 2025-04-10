@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { FoodProvider } from "./contexts/FoodContext";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -21,19 +22,21 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/food-entry" element={<FoodEntry />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <FoodProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/food-entry" element={<FoodEntry />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </FoodProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
