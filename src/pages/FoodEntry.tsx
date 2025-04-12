@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Apple, Fish, Egg, Utensils, Pizza, Sandwich, CupSoda, Coffee, IceCreamCone, Cookie, Beef, Salad } from "lucide-react";
 import { useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -63,7 +62,6 @@ const FoodEntry = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Convert to number if it's a numeric field
     if (name === "calories" || name === "protein" || name === "carbs" || name === "sugar" || name === "fat") {
       setFormValues({
         ...formValues,
@@ -114,6 +112,221 @@ const FoodEntry = () => {
     });
   };
 
+  const commonFoods = {
+    proteins: [
+      {
+        name: "Chicken Breast",
+        calories: 165,
+        protein: 31,
+        carbs: 0,
+        sugar: 0,
+        fat: 3.6,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Eggs (2)",
+        calories: 143,
+        protein: 12.6,
+        carbs: 0.8,
+        sugar: 0.8,
+        fat: 9.5,
+        icon: <Egg className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Salmon (100g)",
+        calories: 206,
+        protein: 22,
+        carbs: 0,
+        sugar: 0,
+        fat: 13,
+        icon: <Fish className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Ground Beef (100g)",
+        calories: 250,
+        protein: 26,
+        carbs: 0,
+        sugar: 0,
+        fat: 17,
+        icon: <Beef className="mr-2 h-4 w-4" />
+      }
+    ],
+    carbs: [
+      {
+        name: "Oatmeal (1 cup)",
+        calories: 150,
+        protein: 5,
+        carbs: 27,
+        sugar: 1,
+        fat: 2.5,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Brown Rice (1 cup)",
+        calories: 216,
+        protein: 5,
+        carbs: 45,
+        sugar: 0,
+        fat: 1.8,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Whole Wheat Bread (1 slice)",
+        calories: 81,
+        protein: 4,
+        carbs: 13.8,
+        sugar: 1.4,
+        fat: 1.1,
+        icon: <Sandwich className="mr-2 h-4 w-4" />
+      }
+    ],
+    fruits: [
+      {
+        name: "Banana",
+        calories: 105,
+        protein: 1.3,
+        carbs: 27,
+        sugar: 14,
+        fat: 0.4,
+        icon: <Apple className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Apple",
+        calories: 95,
+        protein: 0.5,
+        carbs: 25,
+        sugar: 19,
+        fat: 0.3,
+        icon: <Apple className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Blueberries (1 cup)",
+        calories: 84,
+        protein: 1.1,
+        carbs: 21,
+        sugar: 15,
+        fat: 0.5,
+        icon: <Apple className="mr-2 h-4 w-4" />
+      }
+    ],
+    dairy: [
+      {
+        name: "Greek Yogurt (1 cup)",
+        calories: 100,
+        protein: 17,
+        carbs: 6,
+        sugar: 4,
+        fat: 0.7,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Milk (1 cup)",
+        calories: 103,
+        protein: 8,
+        carbs: 12,
+        sugar: 12,
+        fat: 2.4,
+        icon: <CupSoda className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Cheddar Cheese (30g)",
+        calories: 113,
+        protein: 7,
+        carbs: 0.4,
+        sugar: 0.1,
+        fat: 9.3,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      }
+    ],
+    snacks: [
+      {
+        name: "Mixed Nuts (30g)",
+        calories: 173,
+        protein: 5.5,
+        carbs: 6.1,
+        sugar: 1.2,
+        fat: 15.2,
+        icon: <Utensils className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Dark Chocolate (30g)",
+        calories: 170,
+        protein: 2,
+        carbs: 13,
+        sugar: 10,
+        fat: 12,
+        icon: <Cookie className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Ice Cream (1 scoop)",
+        calories: 137,
+        protein: 2.5,
+        carbs: 16,
+        sugar: 14,
+        fat: 7.3,
+        icon: <IceCreamCone className="mr-2 h-4 w-4" />
+      }
+    ],
+    meals: [
+      {
+        name: "Pizza (1 slice)",
+        calories: 285,
+        protein: 12,
+        carbs: 36,
+        sugar: 3.8,
+        fat: 10.4,
+        icon: <Pizza className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Caesar Salad",
+        calories: 230,
+        protein: 8,
+        carbs: 12,
+        sugar: 3,
+        fat: 16,
+        icon: <Salad className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Cheeseburger",
+        calories: 354,
+        protein: 20,
+        carbs: 27,
+        sugar: 5,
+        fat: 17,
+        icon: <Sandwich className="mr-2 h-4 w-4" />
+      }
+    ],
+    beverages: [
+      {
+        name: "Coffee (black)",
+        calories: 2,
+        protein: 0.2,
+        carbs: 0,
+        sugar: 0,
+        fat: 0,
+        icon: <Coffee className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Orange Juice (1 cup)",
+        calories: 111,
+        protein: 1.7,
+        carbs: 26,
+        sugar: 21,
+        fat: 0.5,
+        icon: <CupSoda className="mr-2 h-4 w-4" />
+      },
+      {
+        name: "Soda (12 oz)",
+        calories: 140,
+        protein: 0,
+        carbs: 39,
+        sugar: 39,
+        fat: 0,
+        icon: <CupSoda className="mr-2 h-4 w-4" />
+      }
+    ]
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
@@ -129,7 +342,6 @@ const FoodEntry = () => {
           </Button>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Food Entry Form */}
             <div className="md:col-span-2">
               <Card>
                 <CardHeader>
@@ -232,7 +444,6 @@ const FoodEntry = () => {
                 </CardContent>
               </Card>
               
-              {/* Quick Add Templates */}
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="text-xl">Quick Add</CardTitle>
@@ -241,73 +452,130 @@ const FoodEntry = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleQuickAdd({
-                          name: "Chicken Breast",
-                          calories: 165,
-                          protein: 31,
-                          carbs: 0,
-                          sugar: 0,
-                          fat: 3.6,
-                        })
-                      }
-                    >
-                      Chicken Breast
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleQuickAdd({
-                          name: "Oatmeal",
-                          calories: 150,
-                          protein: 5,
-                          carbs: 27,
-                          sugar: 1,
-                          fat: 2.5,
-                        })
-                      }
-                    >
-                      Oatmeal
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleQuickAdd({
-                          name: "Banana",
-                          calories: 105,
-                          protein: 1.3,
-                          carbs: 27,
-                          sugar: 14,
-                          fat: 0.4,
-                        })
-                      }
-                    >
-                      Banana
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleQuickAdd({
-                          name: "Greek Yogurt",
-                          calories: 100,
-                          protein: 17,
-                          carbs: 6,
-                          sugar: 4,
-                          fat: 0.7,
-                        })
-                      }
-                    >
-                      Greek Yogurt
-                    </Button>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Proteins</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.proteins.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Carbs</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.carbs.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Fruits</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.fruits.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Dairy</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.dairy.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Snacks</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.snacks.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Common Meals</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.meals.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Beverages</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {commonFoods.beverages.map((food) => (
+                          <Button
+                            key={food.name}
+                            variant="outline"
+                            className="justify-start"
+                            onClick={() => handleQuickAdd(food)}
+                          >
+                            {food.icon}
+                            {food.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
             
-            {/* Recent Entries */}
             <div>
               <Card>
                 <CardHeader>
