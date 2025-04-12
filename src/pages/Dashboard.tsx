@@ -8,9 +8,10 @@ import Footer from "@/components/layout/Footer";
 import NutrientProgressBar from "@/components/dashboard/NutrientProgressBar";
 import CircularProgress from "@/components/dashboard/CircularProgress";
 import FoodItemCard from "@/components/dashboard/FoodItemCard";
+import MonthlyNutritionChart from "@/components/dashboard/MonthlyNutritionChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Utensils } from "lucide-react";
+import { PlusCircle, Utensils, CalendarRange } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -118,6 +119,20 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+              
+              {/* Monthly Nutrition Chart */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-xl font-medium">Monthly Nutrition Overview</CardTitle>
+                  <div className="flex items-center text-gray-500">
+                    <CalendarRange size={18} className="mr-1" />
+                    <span className="text-sm">Current Month</span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <MonthlyNutritionChart foods={foods} />
                 </CardContent>
               </Card>
               

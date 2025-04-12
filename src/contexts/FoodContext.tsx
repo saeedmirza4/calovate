@@ -61,6 +61,37 @@ const sampleFoods: FoodItem[] = [
     fat: 22,
     date: new Date().toISOString(),
   },
+  // Add some sample foods from previous days for the monthly chart
+  {
+    id: "food-3",
+    name: "Avocado Toast",
+    calories: 320,
+    protein: 8,
+    carbs: 30,
+    sugar: 2,
+    fat: 18,
+    date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
+  },
+  {
+    id: "food-4",
+    name: "Protein Smoothie",
+    calories: 280,
+    protein: 25,
+    carbs: 35,
+    sugar: 20,
+    fat: 5,
+    date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+  },
+  {
+    id: "food-5",
+    name: "Salmon with Veggies",
+    calories: 450,
+    protein: 40,
+    carbs: 15,
+    sugar: 3,
+    fat: 25,
+    date: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
+  },
 ];
 
 export const FoodProvider = ({ children }: { children: ReactNode }) => {
@@ -72,9 +103,12 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storedFoods = localStorage.getItem('calovate_foods');
       if (storedFoods) {
-        setFoods(JSON.parse(storedFoods));
+        const parsedFoods = JSON.parse(storedFoods);
+        console.log("Loaded foods from localStorage:", parsedFoods.length, "items");
+        setFoods(parsedFoods);
       } else {
         // Use sample foods for demo
+        console.log("No stored foods found, using sample data");
         setFoods(sampleFoods);
         // Store sample foods in localStorage
         localStorage.setItem('calovate_foods', JSON.stringify(sampleFoods));
@@ -89,7 +123,10 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
   // Save foods to localStorage when it changes
   useEffect(() => {
     try {
-      localStorage.setItem('calovate_foods', JSON.stringify(foods));
+      if (foods.length > 0) {
+        console.log("Saving foods to localStorage:", foods.length, "items");
+        localStorage.setItem('calovate_foods', JSON.stringify(foods));
+      }
     } catch (error) {
       console.error("Error saving foods to localStorage:", error);
     }
@@ -103,6 +140,8 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setFoods((prevFoods) => [...prevFoods, newFood]);
+    console.log("Food added:", newFood);
+    
     toast({
       title: "Food added!",
       description: `${food.name} has been added to your log.`,
@@ -117,6 +156,8 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
           : item
       )
     );
+    console.log("Food updated:", id);
+    
     toast({
       title: "Food updated!",
       description: `${food.name} has been updated.`,
@@ -126,6 +167,8 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
   const deleteFood = (id: string) => {
     const foodToDelete = foods.find((food) => food.id === id);
     setFoods((prevFoods) => prevFoods.filter((food) => food.id !== id));
+    
+    console.log("Food deleted:", id);
     
     if (foodToDelete) {
       toast({
@@ -137,7 +180,9 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
 
   const getTodaysFoods = () => {
     const today = new Date().toISOString().split('T')[0];
-    return foods.filter((food) => food.date.startsWith(today));
+    const todaysFoods = foods.filter((food) => food.date.startsWith(today));
+    console.log("Today's foods:", todaysFoods.length, "items");
+    return todaysFoods;
   };
 
   const getTotalNutrition = (foodList: FoodItem[]) => {
@@ -158,6 +203,8 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
   const clearFoods = () => {
     setFoods([]);
     localStorage.removeItem('calovate_foods');
+    console.log("Food log cleared");
+    
     toast({
       title: "Food log cleared",
       description: "All food entries have been cleared.",
