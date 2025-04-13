@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Types for our database tables
@@ -28,16 +29,17 @@ export type DbFood = {
   created_at?: string;
 };
 
-// Get environment variables with fallbacks to prevent runtime errors
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Get environment variables with explicit fallbacks to prevent runtime errors
+// NOTE: You need to set these values in your Lovable project's environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
 // Initialize the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Check if Supabase is properly configured
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase credentials are not properly configured');
+if (supabaseUrl === 'https://placeholder-url.supabase.co' || supabaseAnonKey === 'placeholder-key') {
+  console.error('⚠️ Supabase credentials are not properly configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your project settings.');
 }
 
 // User functions
