@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase, DbUser, getUserById, updateUserGoals as updateGoalsInDb } from "@/lib/supabase";
 
 type User = {
   id: string;
@@ -13,12 +14,6 @@ type User = {
     sugar: number;
     fat: number;
   };
-};
-
-type StoredUser = {
-  email: string;
-  password: string;
-  userData: User;
 };
 
 interface AuthContextType {
@@ -40,99 +35,110 @@ export const useAuth = () => {
   return context;
 };
 
-// Mock user data for demo purposes
-const mockUser: User = {
-  id: "user-123",
-  email: "demo@example.com",
-  name: "Demo User",
-  goals: {
-    calories: 2000,
-    protein: 120,
-    carbs: 250,
-    sugar: 50,
-    fat: 70,
-  },
+// Default goals for new users
+const defaultGoals = {
+  calories: 2000,
+  protein: 120,
+  carbs: 250,
+  sugar: 50,
+  fat: 70,
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
-
-  // Initialize users in localStorage if it doesn't exist
-  useEffect(() => {
-    const storedUsers = localStorage.getItem('calovate_users');
-    if (!storedUsers) {
-      // Initialize with demo user
-      const initialUsers: StoredUser[] = [
-        {
-          email: "demo@example.com",
-          password: "password",
-          userData: mockUser
-        }
-      ];
-      localStorage.setItem('calovate_users', JSON.stringify(initialUsers));
-    }
-  }, []);
   
-  // Load user from localStorage on initial load
+  // Check auth state on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('calovate_user');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Save user to localStorage when it changes
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('calovate_user', JSON.stringify(currentUser));
+    const checkAuthState = async () => {
+      setIsLoading(true);
       
-      // Also update the user data in the users array
-      const storedUsers = JSON.parse(localStorage.getItem('calovate_users') || '[]');
-      const updatedUsers = storedUsers.map((user: StoredUser) => {
-        if (user.userData.email === currentUser.email) {
-          return {
-            ...user,
-            userData: currentUser
-          };
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        try {
+          const userData = await getUserById(session.user.id);
+          if (userData) {
+            setCurrentUser({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name,
+              goals: userData.goals,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
         }
-        return user;
-      });
-      localStorage.setItem('calovate_users', JSON.stringify(updatedUsers));
-    } else {
-      localStorage.removeItem('calovate_user');
-    }
-  }, [currentUser]);
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuthState();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          const userData = await getUserById(session.user.id);
+          if (userData) {
+            setCurrentUser({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name,
+              goals: userData.goals,
+            });
+          }
+        } else if (event === "SIGNED_OUT") {
+          setCurrentUser(null);
+        }
+      }
+    );
+    
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
 
     try {
-      // Get users from localStorage
-      const storedUsers: StoredUser[] = JSON.parse(localStorage.getItem('calovate_users') || '[]');
-      
-      // Find user with matching email and password
-      const user = storedUsers.find(user => 
-        user.email === email && user.password === password
-      );
-      
-      if (user) {
-        setCurrentUser(user.userData);
-        toast({
-          title: "Login successful!",
-          description: `Welcome back, ${user.userData.name}!`,
-        });
-        return true;
-      } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
         toast({
           title: "Login failed",
-          description: "Invalid email or password",
+          description: error.message || "Invalid email or password",
           variant: "destructive",
         });
         return false;
       }
+
+      if (data.user) {
+        const userData = await getUserById(data.user.id);
+        if (userData) {
+          setCurrentUser({
+            id: userData.id,
+            email: userData.email,
+            name: userData.name,
+            goals: userData.goals,
+          });
+          
+          toast({
+            title: "Login successful!",
+            description: `Welcome back, ${userData.name}!`,
+          });
+          return true;
+        }
+      }
+      
+      return false;
     } catch (error) {
       console.error(error);
       toast({
@@ -150,51 +156,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
 
     try {
-      // Get users from localStorage
-      const storedUsers: StoredUser[] = JSON.parse(localStorage.getItem('calovate_users') || '[]');
-      
-      // Check if user already exists
-      const userExists = storedUsers.some(user => user.email === email);
-      if (userExists) {
+      // Register the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
         toast({
           title: "Signup failed",
-          description: "An account with this email already exists",
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
-      
-      // Create new user
-      const newUserId = `user-${Date.now()}`;
-      const newUser: User = {
-        id: newUserId,
-        name,
-        email,
-        goals: {
-          calories: 2000,
-          protein: 120,
-          carbs: 250,
-          sugar: 50,
-          fat: 70,
+
+      if (data.user) {
+        // Create a record in our users table
+        const { error: insertError } = await supabase.from('users').insert([
+          {
+            id: data.user.id,
+            email: data.user.email,
+            name: name,
+            goals: defaultGoals,
+          },
+        ]);
+
+        if (insertError) {
+          console.error("Error creating user profile:", insertError);
+          toast({
+            title: "Account creation failed",
+            description: "Could not create user profile.",
+            variant: "destructive",
+          });
+          return false;
         }
-      };
-      
-      // Add user to stored users
-      const newStoredUser: StoredUser = {
-        email,
-        password,
-        userData: newUser
-      };
-      
-      storedUsers.push(newStoredUser);
-      localStorage.setItem('calovate_users', JSON.stringify(storedUsers));
-      
-      setCurrentUser(newUser);
-      toast({
-        title: "Account created!",
-        description: `Welcome to Calovate, ${name}!`,
-      });
-      return true;
+
+        // Set the current user
+        setCurrentUser({
+          id: data.user.id,
+          email: data.user.email || "",
+          name,
+          goals: defaultGoals,
+        });
+
+        toast({
+          title: "Account created!",
+          description: `Welcome to Calovate, ${name}!`,
+        });
+
+        return true;
+      }
+
+      return false;
     } catch (error) {
       console.error(error);
       toast({
@@ -208,7 +222,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Logout error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setCurrentUser(null);
     toast({
       title: "Logged out",
@@ -216,15 +242,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const updateUserGoals = (goals: User['goals']) => {
-    if (currentUser) {
+  const updateUserGoals = async (goals: User['goals']) => {
+    if (!currentUser) return;
+    
+    try {
+      await updateGoalsInDb(currentUser.id, goals);
+      
       setCurrentUser({
         ...currentUser,
         goals,
       });
+      
       toast({
         title: "Goals updated!",
         description: "Your nutrition goals have been updated.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Update error",
+        description: "Failed to update your goals. Please try again.",
+        variant: "destructive",
       });
     }
   };

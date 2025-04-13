@@ -1,6 +1,14 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  addFoodItem, 
+  getFoodsByUserId, 
+  updateFoodItem, 
+  deleteFoodItem,
+  DbFood
+} from "@/lib/supabase";
 
 export type FoodItem = {
   id: string;
@@ -39,141 +47,132 @@ export const useFood = () => {
   return context;
 };
 
-// Sample food items for demo
-const sampleFoods: FoodItem[] = [
-  {
-    id: "food-1",
-    name: "Oatmeal with Berries",
-    calories: 350,
-    protein: 12,
-    carbs: 60,
-    sugar: 15,
-    fat: 6,
-    date: new Date().toISOString(),
-  },
-  {
-    id: "food-2",
-    name: "Grilled Chicken Salad",
-    calories: 420,
-    protein: 35,
-    carbs: 20,
-    sugar: 5,
-    fat: 22,
-    date: new Date().toISOString(),
-  },
-  // Add some sample foods from previous days for the monthly chart
-  {
-    id: "food-3",
-    name: "Avocado Toast",
-    calories: 320,
-    protein: 8,
-    carbs: 30,
-    sugar: 2,
-    fat: 18,
-    date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-  },
-  {
-    id: "food-4",
-    name: "Protein Smoothie",
-    calories: 280,
-    protein: 25,
-    carbs: 35,
-    sugar: 20,
-    fat: 5,
-    date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-  },
-  {
-    id: "food-5",
-    name: "Salmon with Veggies",
-    calories: 450,
-    protein: 40,
-    carbs: 15,
-    sugar: 3,
-    fat: 25,
-    date: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-  },
-];
-
 export const FoodProvider = ({ children }: { children: ReactNode }) => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
+  const { currentUser } = useAuth();
   const { toast } = useToast();
 
-  // Load foods from localStorage on initial load
+  // Load foods from Supabase when user is signed in
   useEffect(() => {
-    try {
-      const storedFoods = localStorage.getItem('calovate_foods');
-      if (storedFoods) {
-        const parsedFoods = JSON.parse(storedFoods);
-        console.log("Loaded foods from localStorage:", parsedFoods.length, "items");
-        setFoods(parsedFoods);
-      } else {
-        // Use sample foods for demo
-        console.log("No stored foods found, using sample data");
-        setFoods(sampleFoods);
-        // Store sample foods in localStorage
-        localStorage.setItem('calovate_foods', JSON.stringify(sampleFoods));
+    const loadFoods = async () => {
+      if (!currentUser) {
+        setFoods([]);
+        return;
       }
-    } catch (error) {
-      console.error("Error loading foods from localStorage:", error);
-      // Fallback to sample foods
-      setFoods(sampleFoods);
-    }
-  }, []);
 
-  // Save foods to localStorage when it changes
-  useEffect(() => {
-    try {
-      if (foods.length > 0) {
-        console.log("Saving foods to localStorage:", foods.length, "items");
-        localStorage.setItem('calovate_foods', JSON.stringify(foods));
+      try {
+        const loadedFoods = await getFoodsByUserId(currentUser.id);
+        setFoods(loadedFoods.map(food => ({
+          id: food.id,
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          sugar: food.sugar,
+          fat: food.fat,
+          date: food.date,
+        })));
+        console.log("Loaded foods from Supabase:", loadedFoods.length, "items");
+      } catch (error) {
+        console.error("Error loading foods:", error);
       }
-    } catch (error) {
-      console.error("Error saving foods to localStorage:", error);
-    }
-  }, [foods]);
-
-  const addFood = (food: Omit<FoodItem, "id" | "date">) => {
-    const newFood: FoodItem = {
-      ...food,
-      id: `food-${Date.now()}`,
-      date: new Date().toISOString(),
     };
+
+    loadFoods();
+  }, [currentUser]);
+
+  const addFood = async (food: Omit<FoodItem, "id" | "date">) => {
+    if (!currentUser) return;
     
-    setFoods((prevFoods) => [...prevFoods, newFood]);
-    console.log("Food added:", newFood);
-    
-    toast({
-      title: "Food added!",
-      description: `${food.name} has been added to your log.`,
-    });
+    try {
+      const today = new Date().toISOString();
+      
+      const newFood = await addFoodItem({
+        ...food,
+        user_id: currentUser.id,
+        date: today,
+      });
+      
+      const foodItem: FoodItem = {
+        id: newFood.id,
+        name: newFood.name,
+        calories: newFood.calories,
+        protein: newFood.protein,
+        carbs: newFood.carbs,
+        sugar: newFood.sugar,
+        fat: newFood.fat,
+        date: newFood.date,
+      };
+      
+      setFoods(prevFoods => [...prevFoods, foodItem]);
+      console.log("Food added:", foodItem);
+      
+      toast({
+        title: "Food added!",
+        description: `${food.name} has been added to your log.`,
+      });
+    } catch (error) {
+      console.error("Error adding food:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add food. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const editFood = (id: string, food: Omit<FoodItem, "id" | "date">) => {
-    setFoods((prevFoods) =>
-      prevFoods.map((item) =>
-        item.id === id
-          ? { ...item, ...food }
-          : item
-      )
-    );
-    console.log("Food updated:", id);
+  const editFood = async (id: string, food: Omit<FoodItem, "id" | "date">) => {
+    if (!currentUser) return;
     
-    toast({
-      title: "Food updated!",
-      description: `${food.name} has been updated.`,
-    });
+    try {
+      await updateFoodItem(id, food);
+      
+      setFoods(prevFoods =>
+        prevFoods.map(item =>
+          item.id === id
+            ? { ...item, ...food }
+            : item
+        )
+      );
+      
+      console.log("Food updated:", id);
+      
+      toast({
+        title: "Food updated!",
+        description: `${food.name} has been updated.`,
+      });
+    } catch (error) {
+      console.error("Error updating food:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update food. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteFood = (id: string) => {
+  const deleteFood = async (id: string) => {
+    if (!currentUser) return;
+    
     const foodToDelete = foods.find((food) => food.id === id);
-    setFoods((prevFoods) => prevFoods.filter((food) => food.id !== id));
+    if (!foodToDelete) return;
     
-    console.log("Food deleted:", id);
-    
-    if (foodToDelete) {
+    try {
+      await deleteFoodItem(id);
+      
+      setFoods(prevFoods => prevFoods.filter(food => food.id !== id));
+      console.log("Food deleted:", id);
+      
       toast({
         title: "Food removed",
         description: `${foodToDelete.name} has been removed from your log.`,
+      });
+    } catch (error) {
+      console.error("Error deleting food:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove food. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -200,15 +199,31 @@ export const FoodProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const clearFoods = () => {
-    setFoods([]);
-    localStorage.removeItem('calovate_foods');
-    console.log("Food log cleared");
+  const clearFoods = async () => {
+    if (!currentUser) return;
     
-    toast({
-      title: "Food log cleared",
-      description: "All food entries have been cleared.",
-    });
+    // This is a potentially dangerous operation, so add confirmation in the UI before calling this
+    try {
+      // For each food item that belongs to the current user, delete it
+      for (const food of foods) {
+        await deleteFoodItem(food.id);
+      }
+      
+      setFoods([]);
+      console.log("Food log cleared");
+      
+      toast({
+        title: "Food log cleared",
+        description: "All food entries have been cleared.",
+      });
+    } catch (error) {
+      console.error("Error clearing foods:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear food log. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const value = {
